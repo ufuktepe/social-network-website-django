@@ -1,0 +1,160 @@
+{% extends "network/layout.html" %}
+{% load static %}
+
+{% block body %}
+    <div class="main-window">
+
+        <div class="sub-window-left">
+
+            {% comment %}
+            If user is logged in and if new_post_form is true, then show the New Post Form
+            {% endcomment %}
+            {% if user.is_authenticated and new_post_form %}
+                <div class="post">
+                    <h3>New Post</h3>
+                    <div>
+                        <form action="{% url 'create_post'%}" method="POST">
+                            {% csrf_token %}
+                            {{ new_post_form.as_p }}
+                            <div>
+                                <input type="submit" class="btn btn-primary" value="Post">
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            {% endif %}
+
+            {% comment %}
+            Display posts in page
+            {% endcomment %}
+            {% for post in page %}
+                <div class="post">
+                    <div class="post-author">{{ post.author }}</div>
+
+                    {% comment %}
+                    If user is logged in and the post belongs to the current user, then show the edit link
+                    {% endcomment %}
+                    {% if post.author.username == user.username %}
+                        <a href="javascript:void(0)" class="edit" data-id={{ post.id }}>Edit</a>
+                    {% endif %}
+
+                    {% comment %}
+                    Show the post content
+                    {% endcomment %}
+                    <div class="post-content" data-id={{ post.id }}>{{ post.content }}</div>
+
+                    {% comment %}
+                    Show the edit post form
+                    {% endcomment %}
+                    <div class="edit-post" data-id={{ post.id }}>
+                        <form action="" class="edit-form" data-id={{ post.id }}>
+                            <textarea rows="3" cols="50">{{ post.content }}</textarea>
+                            <input type="submit" value="Save">
+                        </form>
+                    </div>
+
+                    {% comment %}
+                    Show the timestamp for the post
+                    {% endcomment %}
+                    <div>{{ post.posted_on }}</div>
+
+                    {% comment %}
+                    Show the number of likes
+                    {% endcomment %}
+                    <div>
+                        <span>&#10084;</span>
+                        <span class="post-num-of-likes" data-id={{ post.id }}>{{ post.user_likes.count }}</span>
+                    </div>
+
+                    {% comment %}
+                    Show the like/unlike icon
+                    {% endcomment %}
+                    {% if user.is_authenticated %}
+                        <div>
+                            {% if user in post.user_likes.all %}
+                                <a href="javascript:void(0)" class="fa fa-thumbs-up" data-id={{ post.id }}></a>
+                            {% else %}
+                                <a href="javascript:void(0)" class="fa fa-thumbs-o-up" data-id={{ post.id }}></a>
+                            {% endif %}
+                        </div>
+                    {% endif %}
+                </div>
+            {% endfor %}
+
+            {% comment %}
+            Pagination front end
+            {% endcomment %}
+            <nav aria-label="...">
+                <ul class="pagination">
+                    {% if page.has_previous %}
+                        <li class="page-item">
+                            <a class="page-link" href="?page={{ page.previous_page_number }}" tabindex="-1" aria-disabled="true">Previous</a>
+                        </li>
+                    {% else %}
+                        <li class="page-item disabled">
+                            <a class="page-link" href="#" tabindex="-1" aria-disabled="true">Previous</a>
+                        </li>
+                    {% endif %}
+
+                    <li class="page-item active" aria-current="page">
+                        <span class="page-link">{{ page.number }}<span class="sr-only">(current)</span></span>
+                    </li>
+
+                    {% if page.has_next %}
+                        <li class="page-item">
+                            <a class="page-link" href="?page={{ page.next_page_number }}">Next</a>
+                        </li>
+                    {% else %}
+                        <li class="page-item disabled">
+                            <a class="page-link" href="#">Next</a>
+                        </li>
+                    {% endif %}
+                </ul>
+            </nav>
+        </div>
+
+        {% comment %}
+        Display profile page if display_profile is true
+        {% endcomment %}
+        {% if display_profile and user.is_authenticated%}
+            <div class="sub-window-right">
+                {% comment %}
+                Display the number of following/followers
+                {% endcomment %}
+                <div class="follow">Following: {{ following.count }}</div>
+                <div class="follow">Followers: {{ followers.count }}</div>
+
+                {% comment %}
+                Display the other users
+                {% endcomment %}
+                {% for other_user in all_users %}
+                    <div class="user-item-outer">
+                        <div class="user-item-inner">{{ other_user.username }}</div>
+
+                        {% comment %}
+                        Display the follow/unfollow buttons
+                        {% endcomment %}
+                        <div class="user-item-inner">
+                            {% if other_user in following %}
+                                <form action="{% url 'switch_follow' other_user_id=other_user.id %}">
+                                    <input class="btn btn-secondary custom-btn-width" type="submit" value="Unfollow">
+                                </form>
+                            {% else %}
+                                <form action="{% url 'switch_follow' other_user_id=other_user.id %}">
+                                    <input class="btn btn-success custom-btn-width" type="submit" value="Follow">
+                                </form>
+                            {% endif %}
+                        </div>
+                    </div>
+                {% endfor %}
+
+            </div>
+        {% endif %}
+
+    </div>
+
+{% endblock %}
+
+{% block script %}
+    <script src="{% static 'network/inbox.js' %}"></script>
+{% endblock %}
